@@ -96,6 +96,15 @@ const findById = async id => {
 /* eslint-disable arrow-body-style */
 const findAll = async () => {
   // START CHALLENGE #1
+  const client = redis.getClient();
+
+  const siteNames = await client.smembersAsync(keyGenerator.getSiteIDsKey());
+
+  const pipe = client.multi();
+  siteNames.forEach(name => pipe.hgetall(name));
+  const sites = await pipe.execAsync();
+
+  return sites.map(remap);
   // END CHALLENGE #1
 };
 /* eslint-enable */
