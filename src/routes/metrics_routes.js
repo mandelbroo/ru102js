@@ -1,30 +1,39 @@
-const router = require('express').Router();
-const { param, query } = require('express-validator');
-const apiErrorReporter = require('../utils/apierrorreporter');
-const controller = require('../controllers/metrics_controller.js');
+const router = require("express").Router();
+const { param, query } = require("express-validator");
+const apiErrorReporter = require("../utils/apierrorreporter");
+const controller = require("../controllers/metrics_controller.js");
 
 // GET /metrics/999?n=50
 router.get(
-  '/metrics/:siteId',
+  "/metrics/:siteId",
   [
-    param('siteId').isInt().toInt(),
-    query('n').optional().isInt({ min: 1 }).toInt(),
-    apiErrorReporter,
+    param("siteId")
+      .isInt()
+      .toInt(),
+    query("n")
+      .optional()
+      .isInt({ min: 1 })
+      .toInt(),
+    apiErrorReporter
   ],
   async (req, res, next) => {
     try {
-      const limit = Number.isNaN(req.query.n) ? 120 : req.query.n;
+      const limit =
+        !req.query.n || Number.isNaN(req.query.n) ? 120 : req.query.n;
 
-      const siteMetricsReport = await controller.getMetricsForSite(req.params.siteId, limit);
+      const siteMetricsReport = await controller.getMetricsForSite(
+        req.params.siteId,
+        limit
+      );
       return res.status(200).json(siteMetricsReport);
     } catch (err) {
-      if (err.name && err.name === 'TooManyMetricsError') {
+      if (err.name && err.name === "TooManyMetricsError") {
         return res.status(400).send(err.message);
       }
 
       return next(err);
     }
-  },
+  }
 );
 
 module.exports = router;
