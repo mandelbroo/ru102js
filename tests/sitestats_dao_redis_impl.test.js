@@ -1,13 +1,13 @@
-const config = require('better-config');
-const redis = require('../src/daos/impl/redis/redis_client');
-const redisSiteStatsDAO = require('../src/daos/impl/redis/sitestats_dao_redis_impl');
-const keyGenerator = require('../src/daos/impl/redis/redis_key_generator');
+const config = require("better-config");
+const redis = require("../src/daos/impl/redis/redis_client");
+const redisSiteStatsDAO = require("../src/daos/impl/redis/sitestats_dao_redis_impl");
+const keyGenerator = require("../src/daos/impl/redis/redis_key_generator");
 
-const testSuiteName = 'sitestats_dao_redis_impl';
+const testSuiteName = "sitestats_dao_redis_impl";
 
 const testKeyPrefix = `test:${testSuiteName}`;
 
-config.set('../config.json');
+config.set("../config.json");
 keyGenerator.setPrefix(testKeyPrefix);
 const client = redis.getClient();
 
@@ -34,7 +34,7 @@ test(`${testSuiteName}: update`, async () => {
     dateTime: 1562619432,
     whUsed: 22.4,
     whGenerated: 12.3,
-    tempC: 23.4,
+    tempC: 23.4
   };
 
   await redisSiteStatsDAO.update(meterReading);
@@ -44,10 +44,12 @@ test(`${testSuiteName}: update`, async () => {
   let after = Math.floor(new Date().getTime() / 1000);
   let hash = await client.hgetallAsync(hashKey);
 
-  expect(hash.meterReadingCount).toBe('1');
+  expect(hash.meterReadingCount).toBe("1");
   expect(hash.maxWhGenerated).toBe(`${meterReading.whGenerated}`);
   expect(hash.minWhGenerated).toBe(`${meterReading.whGenerated}`);
-  expect(hash.maxCapacity).toBe(`${meterReading.whGenerated - meterReading.whUsed}`);
+  expect(hash.maxCapacity).toBe(
+    `${meterReading.whGenerated - meterReading.whUsed}`
+  );
 
   let lastReportingTime = parseInt(hash.lastReportingTime, 10);
   expect(lastReportingTime).toBeGreaterThanOrEqual(before);
@@ -61,7 +63,7 @@ test(`${testSuiteName}: update`, async () => {
     dateTime: 1562619482,
     whUsed: 24.4,
     whGenerated: 12.1,
-    tempC: 24.4,
+    tempC: 24.4
   };
 
   before = Math.floor(new Date().getTime() / 1000);
@@ -70,7 +72,7 @@ test(`${testSuiteName}: update`, async () => {
 
   hash = await client.hgetallAsync(hashKey);
 
-  expect(hash.meterReadingCount).toBe('2');
+  expect(hash.meterReadingCount).toBe("2");
 
   // Looking for value from the previous meterReading.
   expect(hash.maxWhGenerated).toBe(`${meterReading.whGenerated}`);
@@ -79,7 +81,9 @@ test(`${testSuiteName}: update`, async () => {
   expect(hash.minWhGenerated).toBe(`${meterReading2.whGenerated}`);
 
   // Looking for value from the previous meterReading.
-  expect(hash.maxCapacity).toBe(`${meterReading.whGenerated - meterReading.whUsed}`);
+  expect(hash.maxCapacity).toBe(
+    `${meterReading.whGenerated - meterReading.whUsed}`
+  );
 
   lastReportingTime = parseInt(hash.lastReportingTime, 10);
   expect(lastReportingTime).toBeGreaterThanOrEqual(before);
@@ -93,7 +97,7 @@ test(`${testSuiteName}: update`, async () => {
     dateTime: 1562619542,
     whUsed: 10.4,
     whGenerated: 22.1,
-    tempC: 22.3,
+    tempC: 22.3
   };
 
   before = Math.floor(new Date().getTime() / 1000);
@@ -102,7 +106,7 @@ test(`${testSuiteName}: update`, async () => {
 
   hash = await client.hgetallAsync(hashKey);
 
-  expect(hash.meterReadingCount).toBe('3');
+  expect(hash.meterReadingCount).toBe("3");
 
   // Looking for value from this meterReading.
   expect(hash.maxWhGenerated).toBe(`${meterReading3.whGenerated}`);
@@ -111,13 +115,14 @@ test(`${testSuiteName}: update`, async () => {
   expect(hash.minWhGenerated).toBe(`${meterReading2.whGenerated}`);
 
   // Looking for value from the this meterReading.
-  expect(hash.maxCapacity).toBe(`${meterReading3.whGenerated - meterReading3.whUsed}`);
+  expect(hash.maxCapacity).toBe(
+    `${meterReading3.whGenerated - meterReading3.whUsed}`
+  );
 
   lastReportingTime = parseInt(hash.lastReportingTime, 10);
   expect(lastReportingTime).toBeGreaterThanOrEqual(before);
   expect(lastReportingTime).toBeLessThanOrEqual(after);
 });
-
 
 test(`${testSuiteName}: findById`, async () => {
   // Create some data.
@@ -126,7 +131,7 @@ test(`${testSuiteName}: findById`, async () => {
     dateTime: 1562619432,
     whUsed: 22.4,
     whGenerated: 12.3,
-    tempC: 23.4,
+    tempC: 23.4
   };
 
   // Used for checking lastReportingTime
@@ -138,22 +143,24 @@ test(`${testSuiteName}: findById`, async () => {
   const after = Math.floor(new Date().getTime() / 1000);
 
   // Retrieve the data.
-  const response = await redisSiteStatsDAO.findById(meterReading.siteId, meterReading.dateTime);
+  const response = await redisSiteStatsDAO.findById(
+    meterReading.siteId,
+    meterReading.dateTime
+  );
 
   // Check versus expected results.
   expect(response.meterReadingCount).toBe(1);
   expect(response.maxWhGenerated).toBe(meterReading.whGenerated);
   expect(response.minWhGenerated).toBe(meterReading.whGenerated);
-  expect(response.maxCapacity).toBe(meterReading.whGenerated - meterReading.whUsed);
+  expect(response.maxCapacity).toBe(
+    meterReading.whGenerated - meterReading.whUsed
+  );
   expect(response.lastReportingTime).toBeGreaterThanOrEqual(before);
   expect(response.lastReportingTime).toBeLessThanOrEqual(after);
 
   // Check that an expiry was set.
   const ttl = await client.ttlAsync(
-    keyGenerator.getSiteStatsKey(
-      meterReading.siteId,
-      meterReading.dateTime,
-    ),
+    keyGenerator.getSiteStatsKey(meterReading.siteId, meterReading.dateTime)
   );
 
   expect(ttl).toBeGreaterThan(0);
