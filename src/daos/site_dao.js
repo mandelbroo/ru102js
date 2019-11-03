@@ -1,7 +1,7 @@
-const daoLoader = require('./daoloader');
+const daoLoader = require("./daoloader");
 
 // Week 3, change this from 'site' to 'site_geo'.
-const impl = daoLoader.loadDao('site');
+const impl = daoLoader.loadDao("site_geo");
 
 module.exports = {
   /**
@@ -39,12 +39,8 @@ module.exports = {
    * @param {'KM' | 'MI'} radiusUnit - The unit that the value of radius is in.
    * @returns {Promise} - a Promise, resolving to an array of site objects.
    */
-  findByGeo: async (lat, lng, radius, radiusUnit) => impl.findByGeo(
-    lat,
-    lng,
-    radius,
-    radiusUnit,
-  ),
+  findByGeo: async (lat, lng, radius, radiusUnit) =>
+    impl.findByGeo(lat, lng, radius, radiusUnit),
 
   /**
    * Get an array of sites where capacity exceeds consumption within
@@ -58,12 +54,6 @@ module.exports = {
    * @param {'KM' | 'MI'} radiusUnit - The unit that the value of radius is in.
    * @returns {Promise} - a Promise, resolving to an array of site objects.
    */
-  findByGeoWithExcessCapacity: async (lat, lng, radius, radiusUnit) => (
-    impl.findByGeoWithExcessCapacity(
-      lat,
-      lng,
-      radius,
-      radiusUnit,
-    )
-  ),
+  findByGeoWithExcessCapacity: async (lat, lng, radius, radiusUnit) =>
+    impl.findByGeoWithExcessCapacity(lat, lng, radius, radiusUnit)
 };
