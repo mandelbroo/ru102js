@@ -1,5 +1,5 @@
-const redis = require('./redis_client');
-const keyGenerator = require('./redis_key_generator');
+const redis = require("./redis_client");
+const keyGenerator = require("./redis_key_generator");
 
 /* eslint-disable no-unused-vars */
 const globalMaxFeedLength = 10000;
@@ -18,7 +18,7 @@ const siteMaxFeedLength = 2440;
  * @returns {Array} - array containing alternating keys and values from 'obj'.
  * @private
  */
-const objectToArray = (obj) => {
+const objectToArray = obj => {
   const arr = [];
 
   for (const k in obj) {
@@ -43,7 +43,7 @@ const objectToArray = (obj) => {
  * @returns {Object} - object whose keys and values are the field names and values from arr.
  * @private
  */
-const arrayToObject = (arr) => {
+const arrayToObject = arr => {
   const obj = {};
 
   // arr contains an even number of entries, with alternating
@@ -67,7 +67,7 @@ const arrayToObject = (arr) => {
  * @returns {Object} - A meter reading object.
  * @private
  */
-const remap = (streamEntry) => {
+const remap = streamEntry => {
   const remappedStreamEntry = { ...streamEntry };
 
   remappedStreamEntry.siteId = parseInt(streamEntry.siteId, 10);
@@ -87,14 +87,14 @@ const remap = (streamEntry) => {
  * @returns {Array} - An array of meter reading objects.
  * @private
  */
-const unpackStreamEntries = (streamResponse) => {
+const unpackStreamEntries = streamResponse => {
   // Stream entries need to be unpacked as the Redis
   // client returns them as an array of arrays, rather
   // than an array of objects.
   let meterReadings = [];
 
   if (streamResponse && Array.isArray(streamResponse)) {
-    meterReadings = streamResponse.map((entry) => {
+    meterReadings = streamResponse.map(entry => {
       // entry[0] is the stream ID, we don't need that.
       const fieldValueArray = entry[1];
 
@@ -114,7 +114,7 @@ const unpackStreamEntries = (streamResponse) => {
  * @param {*} meterReading
  * @returns {Promise} - Promise, resolves on completion.
  */
-const insert = async (meterReading) => {
+const insert = async meterReading => {
   // Unpack meterReading into array of alternating key
   // names and values for addition to the stream.
   /* eslint-disable no-unused-vars */
@@ -125,6 +125,24 @@ const insert = async (meterReading) => {
   const pipeline = client.batch();
 
   // START Challenge #6
+
+  pipeline.xaddAsync(
+    keyGenerator.getGlobalFeedKey(),
+    "MAXLEN",
+    "~",
+    globalMaxFeedLength,
+    "*",
+    ...fields
+  );
+  pipeline.xaddAsync(
+    keyGenerator.getFeedKey(fields[1]),
+    "MAXLEN",
+    "~",
+    siteMaxFeedLength,
+    "*",
+    ...fields
+  );
+
   // END Challenge #6
 
   await pipeline.execAsync();
@@ -139,7 +157,7 @@ const insert = async (meterReading) => {
  */
 const getRecent = async (key, limit) => {
   const client = redis.getClient();
-  const response = await client.xrevrangeAsync(key, '+', '-', 'COUNT', limit);
+  const response = await client.xrevrangeAsync(key, "+", "-", "COUNT", limit);
 
   return unpackStreamEntries(response);
 };
@@ -149,10 +167,8 @@ const getRecent = async (key, limit) => {
  * @param {number} limit - the maximum number of readings to return.
  * @returns {Promise} - Promise that resolves to an array of meter reading objects.
  */
-const getRecentGlobal = async limit => getRecent(
-  keyGenerator.getGlobalFeedKey(),
-  limit,
-);
+const getRecentGlobal = async limit =>
+  getRecent(keyGenerator.getGlobalFeedKey(), limit);
 
 /**
  * Get recent meter readings for a specific solar sites.
@@ -160,13 +176,11 @@ const getRecentGlobal = async limit => getRecent(
  * @param {*} limit - the maximum number of readings to return.
  * @returns {Promise} - Promise that resolves to an array of meter reading objects.
  */
-const getRecentForSite = async (siteId, limit) => getRecent(
-  keyGenerator.getFeedKey(siteId),
-  limit,
-);
+const getRecentForSite = async (siteId, limit) =>
+  getRecent(keyGenerator.getFeedKey(siteId), limit);
 
 module.exports = {
   insert,
   getRecentGlobal,
-  getRecentForSite,
+  getRecentForSite
 };
