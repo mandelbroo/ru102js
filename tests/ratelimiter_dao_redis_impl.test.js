@@ -1,13 +1,13 @@
-const config = require('better-config');
-const redis = require('../src/daos/impl/redis/redis_client');
-const redisRateLimiterDAO = require('../src/daos/impl/redis/ratelimiter_dao_redis_impl');
-const keyGenerator = require('../src/daos/impl/redis/redis_key_generator');
+const config = require("better-config");
+const redis = require("../src/daos/impl/redis/redis_client");
+const redisRateLimiterDAO = require("../src/daos/impl/redis/ratelimiter_dao_redis_impl");
+const keyGenerator = require("../src/daos/impl/redis/redis_key_generator");
 
-const testSuiteName = 'ratelimiter_dao_redis_impl';
+const testSuiteName = "ratelimiter_dao_redis_impl";
 
 const testKeyPrefix = `test:${testSuiteName}`;
 
-config.set('../config.json');
+config.set("../config.json");
 keyGenerator.setPrefix(testKeyPrefix);
 const client = redis.getClient();
 
@@ -28,25 +28,26 @@ afterAll(() => {
 
 const runRateLimiter = async (limiterOpts, iterations) => {
   let remaining = limiterOpts.maxHits;
+  const resource = "testresource" + Date.now().toString().slice(8, 13);
 
   for (let n = 0; n < iterations; n += 1) {
     if (remaining > 0) {
       remaining -= 1;
     }
 
-    const remains = await redisRateLimiterDAO.hit('testresource', limiterOpts);
-    expect(remaining).toBe(remains);
+    const remains = await redisRateLimiterDAO.hit(resource, limiterOpts);
+    expect(remains).toBe(remaining);
   }
 };
 
-test(`${testSuiteName}: hit (fixed window limit not exceeded)`, async () => {
+test.skip(`${testSuiteName}: hit (fixed window limit not exceeded)`, async () => {
   await runRateLimiter({
     interval: 1,
     maxHits: 5,
   }, 5);
 });
 
-test(`${testSuiteName}: hit (fixed window limit exceeded)`, async () => {
+test.skip(`${testSuiteName}: hit (fixed window limit exceeded)`, async () => {
   await runRateLimiter({
     interval: 1,
     maxHits: 5,
@@ -54,9 +55,19 @@ test(`${testSuiteName}: hit (fixed window limit exceeded)`, async () => {
 });
 
 // Challenge 7.
-test.todo(`${testSuiteName}: hit (sliding window limit not exceeded)`);
+test(`${testSuiteName}: hit (sliding window limit not exceeded)`, async () => {
+  await runRateLimiter({
+    interval: 1,
+    maxHits: 5,
+  }, 5);
+});
 
 // Challenge 7.
-test.todo(`${testSuiteName}: hit (sliding window limit exceeded)`);
+test(`${testSuiteName}: hit (sliding window limit exceeded)`, async () => {
+  await runRateLimiter({
+    interval: 1,
+    maxHits: 5,
+  }, 7);
+});
 
 /* eslint-enable */
